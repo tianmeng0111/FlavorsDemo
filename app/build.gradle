@@ -1,0 +1,143 @@
+apply plugin: 'com.android.application'
+
+Gradle gradle = getGradle()
+String taskName = gradle.getStartParameter().getTaskNames()[0]
+// Flavor全称，例如：Channel_1，这里不会改变大小写，因为会用它去读取ChannelConfig.gradle中的配置信息
+def flavorName
+// 更改此处member 或用gradle命令行打包，不更改此处
+def member = "Channel_1"
+// 会员的渠道库的名称，channel_1_library, 这里Library为什么变小写呢？
+def channelLibName = ":${member}_Library"
+// 执行任务的类型：只匹配assemble 或 install 或 compile
+def taskType
+
+//根据taskName获取当前应用类型
+if (taskName != null) {
+    // 任务名称
+    println("[taskName] $taskName")
+    // 解析渠道名称的正则表达式
+    def taskNameReg = /.*(assemble|install|compile)(([A-Z][a-z]+)_([0-9]+))?([A-Z]\w+)?/
+    // 正则匹配
+    def matcher = taskName =~ taskNameReg
+
+    if (taskName.matches(taskNameReg)) {
+        taskType = matcher[0][1].toString()
+        flavorName = matcher[0][2].toString()
+        member = matcher[0][3].toString() + "_" + matcher[0][4].toString()
+
+        channelLibName = ":${member}_Library"
+
+        println("[taskType] $taskType")
+        // 如果命令中未包含FlavorName，直接报异常退出。
+        // 这种情况可能是assembleRelease，会导致引用库不正确，必须强制退出
+        if (null == matcher[0][2]) {
+            throw new Exception("使用的打包命令必须包含FlavorName，否则引用的库不正确!!!")
+        }
+        // 存在FlavorName，正常取值，为平台化做准备
+        println("[当前打包会员渠道全称] $flavorName")
+        println("[当前app中文名称] ${rootProject.ext.getProperty(flavorName).k_appName}")
+        println("[当前包名] ${rootProject.ext.getProperty(flavorName).PKGNAME}")
+        println("[member] $member")
+        println("[当前打包Channel名字] $channelLibName")
+    } else {
+        println("${taskName}, 未匹配到打包命令的正则，如果打包，请使用assembleChannel_1Debug这样的命令，注意大小写，不要使用数字，并且不要使用缩写的命令。" +
+                "其中buildType:Debug或者Release可有可无。")
+    }
+}
+
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+//        applicationId "com.example.flavorsdemo"
+        minSdkVersion 21
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        defaultConfig {
+            buildConfigField "boolean", "needSdk", "true"
+        }
+    }
+
+    buildTypes {
+
+        debug {
+            minifyEnabled false
+
+            /*
+            定义变量类型(String)  变量名称(SERVER2)  获取变量值的方法getSERVER2('release/debug')
+             */
+//            buildConfigField 'String', 'SERVER2', getSERVER2('debug')
+//            buildConfigField 'String', 'WEB', getWEB('debug')
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+//            buildConfigField 'String', 'SERVER2', getSERVER2('release')
+//            buildConfigField 'String', 'WEB', getWEB('release')
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // 配置多维度的配置渠道
+    flavorDimensions "PKGNAME"
+
+    productFlavors {
+//        bd {
+//            buildConfigField "String", "SERVER2", "debug"
+//        }
+        Channel_1{
+        }
+        Channel_2{
+        }
+
+        // 动态配置
+        productFlavors.findAll() {
+            flavor ->
+                flavor.dimension = 'PKGNAME'
+                flavor.manifestPlaceholders = rootProject.ext.getProperty(flavor.name)
+                flavor.applicationId = rootProject.ext.getProperty(flavor.name).PKGNAME
+
+        }
+    }
+
+    //修改生成的apk名字
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def oldFile = output.outputFile
+            if (variant.buildType.name.equals('release')) {
+
+            }
+            if (variant.buildType.name.equals('debug')) {
+                if (oldFile != null && oldFile.name.endsWith('.apk')) {
+                    output.outputFileName = 'Channel' + member + '_' + versionCode + '.apk'
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+//    testImplementation 'junit:junit:4.+'
+//    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+//    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+    // 差异化打包 引入对应lib
+    implementation project(channelLibName)
+
+    implementation 'com.android.support:multidex:1.0.1'
+}

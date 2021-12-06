@@ -1,0 +1,17 @@
+//include ':Channel_1_Library'
+include ':app'
+rootProject.name = "FlavorsDemo"
+
+// 循环添加依赖
+List<String> channel_name = new ArrayList<>(2);
+channel_name.add("1")
+channel_name.add("2")
+channel_name.each {
+    name ->
+        def libName = ':Channel_' + name + '_Library'
+        include libName
+        project(libName).projectDir = new File(settingsDir, getChannelPath(name))
+}
+static def getChannelPath(name) {
+    'channel/Channel_' + name + '_Library'
+}

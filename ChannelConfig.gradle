@@ -1,0 +1,14 @@
+ext {
+
+    Channel_1 = [
+            PKGNAME : "com.tm.boy",
+            k_appName : "boy",
+            app_icon : "@drawable/ic_launch_boy",
+    ]
+
+    Channel_2 = [
+            PKGNAME : "com.tm.cat",
+            k_appName : "cat",
+            app_icon : "@drawable/ic_launch_cat",
+    ]
+}

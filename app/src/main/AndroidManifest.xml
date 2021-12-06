@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.flavorsdemo">
+
+    <application
+        android:name=".CommonBaseApplication"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="${k_appName}"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FlavorsDemo">
+
+        <meta-data
+            android:name="k_appName"
+            android:value="${k_appName}" />
+
+        <!--        若有provider和service 不能重包名-->
+        <meta-data
+            android:name="PKGNAME"
+            android:value="${PKGNAME}" />
+
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
